@@ -1,6 +1,5 @@
-Data-Science-Portfolio/Change Of Point Model/heating.png
-# ![alt text](http://url/to/img.png) Change of Point Model
-[![text](https://github.com/Data-Science_Portfolio/Change Of Point Model/heating.jpg)](#features)
+# <img src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/Change%20Of%20Point%20Model/heating.png" width="100" height="100"> Change of Point Model
+
 Implementation and comparison of different 'offline' unsupervised methods of change-point detection, based in real data.
 </br>The mission : detecting the CPD of the Israeli's summer temperatures distribution.
 For interactive version : [click here](https://itaygonnen.shinyapps.io/CPD_R/)
