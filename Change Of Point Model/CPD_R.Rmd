@@ -1,0 +1,300 @@
+---
+title: "Is it just me - or it is getting HOT in here?"
+author: "Itay Gonnen"
+output: 
+      html_document:
+        toc: true
+        theme: united
+runtime: shiny
+date: "2022-07-18"
+subtitle: "Implementation and comparison of different 'offline' unsupervised methods of change-point detection." 
+---
+
+So I was wondering whatever it is really getting hot in here or it's just me.
+Luckily, I learned in the last semester about Change of Point Model, and I have this felling that this is a great opportunity to test it hands on real data. 
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library('ggplot2')
+library('hrbrthemes')
+library('extrafont')
+
+```
+
+# Preparing the Data 
+
+read the data:
+```{r}
+raw_data <- read.csv("https://query.data.world/s/fp6iz4362wlc4krcrspzts3efqexpx", header=TRUE, stringsAsFactors=FALSE);
+#raw_data <- read.csv("./data4R/GlobalLandTemperaturesByCountry.csv")
+only_israel = subset(raw_data, raw_data$Country == 'Israel')
+summary(only_israel)
+```
+
+Taking care of mixture date formats as char and Na's:
+```{r}
+no_na <- na.omit(only_israel) 
+origin_dates = no_na$dt
+bar_dates   =  as.Date(origin_dates,format="%Y-%m-%d") # Produces NA when format is not "%Y-%m-%d"
+slash_dates =  as.Date(origin_dates,format="%d/%m/%d") # Produces NA when format is not "%d/%m/%d"
+bar_dates[is.na(bar_dates)] = slash_dates[!is.na(slash_dates)] # Combine both while keeping their ranks
+dates = bar_dates
+```
+
+Note that we want to examine temperature, which means we need to dividing the data into seasons:
+
+```{r}
+season <- function(date, ind){
+  season =0
+  year = as.integer(strsplit(as.character(date),"-")[[1]][1])
+  month = as.integer(strsplit(as.character(date),"-")[[1]][2])
+  if(month == 1)  { season = 1  }
+  if(month == 4)  { season = 2  }
+  if(month == 7)  { season = 3  }
+  if(month == 10) { season = 4  }
+  return (c(year, season))
+}
+```
+
+Organizing by seasons:
+
+```{r}
+df = data.frame(matrix(ncol = 4, nrow = 0))
+colnames(df) <- c('Year', 'Season', 'AvgTemp','AvgTempUncertainty')
+ind = 1
+n = nrow(no_na)
+while(ind < n){
+  season_temp = no_na[ind:(ind+2),]
+  year_month = season(dates[ind],ind)
+  df[nrow(df) + 1,] = list(year_month[1],year_month[2],
+                           mean(season_temp$AverageTemperature ),
+                           mean(season_temp$AverageTemperatureUncertainty))
+                         
+ ind = ind+3
+}
+df=df[1:810,]
+```
+
+Plotting basic data:
+
+```{r}
+winter = subset(df, Season == 1)
+spring = subset(df, Season == 2)
+summer = subset(df, Season == 3)
+autumn = subset(df, Season == 4)
+```
+
+ 
+
+
+# 1 Intuition 
+### Change at first glance
+Let's have a look on the summer temperatures:
+
+```{r message=FALSE, warning=FALSE}
+ggplot(summer, aes(x = Year, y = AvgTemp)) + geom_point()+
+       ggtitle("Summer Avg Temperatures")+
+       geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE) +
+       theme_ipsum()
+
+```
+
+
+We clearly ``see’’ positive trend of the average temperatures.
+How can we automatically identify the time of such change?
+As said, the change we are looking for is change in the distribution - which can detect by observing the value's itselves. 
+
+
+### The Postprior distribution 
+Change point, as said - is basically a time stamp which from now on we observed from a different distribution. 
+Postprior distribution = the distribution *according* to the observed data. 
+
+
+So, **I encourage you to find the change point** by your self. Meaning, find the $\tau$ which balance the pink lines to best "fit" both sides of the graph (separably).
+Those lines are the expected value of the post-prior distribution. Meaning, the left line in $\mu_1$ based on $y_{1:τ}\sim f(\mu_1)$ , similarly - right line represent $\mu_2$ based on $y_{τ:2015}\sim f(\mu_2)$.
+
+```{r echo=FALSE}
+library('shiny')
+# Define UI
+  ui <- fluidPage(
+    titlePanel("CPD - try it yourself!"),
+    verticalLayout(
+    sidebarLayout(
+  
+      # Sidebar with a slider input
+      sidebarPanel(
+        sliderInput("tau",
+                    "tau:",
+                    min = 1850,
+                    max = 2013,
+                    value = 1870)
+      ),
+  
+      # Show a plot of the generated distribution
+      mainPanel(
+        plotOutput("CPD")
+        )
+    )
+  )
+  )
+  
+  # Server logic
+  server <- function(input, output) {
+  
+    output$CPD <- renderPlot({
+       tau = input$tau
+       indx = which(summer$Year == tau)
+       n = nrow(summer)
+       mu1 = mean(summer$AvgTemp[1:indx])
+       mu2 = mean(summer$AvgTemp[indx:n])
+       segment_df <- data.frame(
+                      x = c(1800,tau),
+                      y = c(mu1,mu2),
+                      xend = c(tau,2013),
+                      yend = c(mu1,mu2)     )
+       ggplot(summer) + 
+       ggtitle("Summer Avg Temperatures")+
+       geom_line(aes(Year, AvgTemp), color = "#6666CC")+
+       geom_vline(xintercept =tau ,col= "darkred", size=1 ) +
+       geom_segment(data = segment_df, 
+            mapping = aes(x=x, y=y, xend=xend, yend=yend), 
+            inherit.aes = FALSE, col="darkmagenta" , size =1   )
+  
+    })
+    
+  }
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+
+```
+
+So far, we examine what is the idea of CPD. 
+Now, let's examine the showcase -  an implementation of a three detection algorithms for the early detection of rising trend of temperatures at in the Israel's summers. 
+
+# 2 - Model Comparison 
+## Method I -  MCP packege 
+
+The mcp is the most common package for change detection. One of it's advantages is the abilty to chose *the number of points* we want to find. 
+At first try - let's guess two change points:
+
+```{r message=FALSE}
+library ('mcp')
+summer_model = list(AvgTemp~1, 1~1, 1~1)  # two intercept-only segments
+fit_mcp_summer = mcp(summer_model, data = summer, par_x = "Year")
+summary(fit_mcp_summer)
+```
+
+```{r}
+library('patchwork')
+plot(fit_mcp_summer) + plot_pars(fit_mcp_summer, pars = c("cp_1","cp_2"), type = "dens_overlay")
+```
+
+The summary shows good parameter recovery, though the second change point is detected a bit early. This is understandable if you look at the data, and the true change point is still within the highest density interval.
+
+\newpage
+###  Cross Validation for MCP
+ 
+*Wait, who said there are only 2 cpd?*
+
+We can test that assumption with Cross-Validation (_'leave one out'_ method):
+
+```{r message=FALSE, warning=FALSE}
+model1 = list(AvgTemp~1,1~1)           # two intercept-only segments
+model2 = list(AvgTemp~1,1~1,1~1)       # three intercept-only segments
+##
+fit_mcp1 = mcp(model1, data = summer, par_x = "Year")
+fit_mcp2 = mcp(model2, data = summer, par_x = "Year")
+
+```
+
+compare distributions:
+```{r ,fig.show="hold", out.width="50%"}
+plot(fit_mcp1) + plot_pars(fit_mcp1, pars = c("cp_1"), type = "dens_overlay")
+plot(fit_mcp2) + plot_pars(fit_mcp2, pars = c("cp_1", "cp_2"), type = "dens_overlay")
+
+```
+Observing the plots, we can see that when we ask from MCP to find two change points, it's dividing the one into two points at the edges of the change segment (form 1890 to 1960).
+Preforming comparison with CV:
+
+```{r message=FALSE, warning=FALSE}
+fit_mcp1$loo = loo(fit_mcp1)
+fit_mcp2$loo = loo(fit_mcp2)
+
+loo::loo_compare(fit_mcp1$loo, fit_mcp2$loo)
+```
+Seems that the model with only one point's fit's better! 
+Meaning, we need to decide which of $cp_1,cp_2$  is the "real" change point. 
+For this task, we can use another CP methods.
+
+
+
+## Method II -  The Changepoint packege 
+The next model is ChangePoint package. It's  advantage is it's  non-parametric approach. 
+Meaning, it it concentrate on fitting the data  by it's trend (very similar to the interactive example):
+
+```{r message=FALSE, warning=FALSE}
+library(changepoint)
+fit_changepoint_summer = cpt.mean(summer$AvgTemp)
+
+# Return estimates
+c(ints = param.est(fit_changepoint_summer)$mean,
+cp = cpts(fit_changepoint_summer))
+
+plot(fit_changepoint_summer, main= "ChangePoint Model - Summer AvgTemp", ylab = "AvgTemp Effect")
+```
+
+Interesting! CP detect only one change point - $cp_2\sim1970$.
+Indeed, if we get back to MCP plot, we can see that the "jump" at the $cp_2$ (the grey trajectorys ) is higher.As said, CP detect changes by looking at the trend slop at each point.  
+
+## Method III -  The BCP packege 
+What's unique in BCP it is is pure Bayesian approach. It's gives you the Posterior density of your data.
+The upper plot is the estimated mean (the purple line from above!) at each point. 
+
+
+```{r message=FALSE, warning=FALSE}
+library(bcp)
+fit_bcp = bcp(summer$AvgTemp, d = 1000)
+plot(fit_bcp)
+```
+
+We see that it vaguely captures the change point at x = 60, and has some smeared-out probability around x = 170 (which is similar to Changepoint findings!).
+ 
+# 3- One last observation
+
+At least, we did not mention another aspect of changing - changing of the **variance of the distribution**. 
+We can model variance by adding a sigma() term to the formula. 
+Plotting the prediction interval is an intuitive way to to see how the variance is estimated.
+Small example upon our data:
+
+```{r message=FALSE, warning=FALSE ,fig.show="hold", out.width="50%"}
+var_model = list(
+  AvgTemp ~ 1,
+   ~ 0 + sigma(1 + Year),
+   ~ 0 + Year
+)
+fit = mcp(var_model, data = summer,cores = 3, adapt = 5000, iter = 5000)
+plot(fit, q_predict = TRUE)
+plot(fit, which_y = "sigma", q_fit = TRUE)
+```
+
+The left plot is our data with it's variance interval at each year. 
+The right plot is the variance interval at each year. 
+At first observation, the plot is not informative. 
+But note that the grey trajectories does have the same tendency. indeed - if we take a look on the Uncertainty of the data we have decreasing trend, and even a significant one around $cp_2$. 
+```{r message=FALSE, warning=FALSE}
+ggplot(summer, aes(x = Year, y = AvgTempUncertainty)) + geom_point()+
+       ggtitle("AvgTempUncertainty")+
+       geom_smooth(method=lm , color="red", fill="#69b3a2", se=TRUE) +
+       theme_ipsum()
+```
+
+# 4 - Summary 
+
+So, $cp_2$ is Definitely  our winner for this contest. All three algorithms had detected this point as  an interval of changing of the Israeli's summer temperatures distribution. 
+Note, that we can pay attention to the change *interval*. MCP predicted 70-80 years interval around each point. 
+CP predicted almost 60 years interval but symmetrically around $cp_2$ (BCP doesn't provide point). 
+
+
+
+
+
