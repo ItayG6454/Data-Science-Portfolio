@@ -1,4 +1,5 @@
-# ![Alt text](/heating.jpg?raw=true "Optional Title") Change of Point Model
+Data-Science-Portfolio/Change Of Point Model/heating.png
+# ![alt text](http://url/to/img.png) Change of Point Model
 [![text](https://github.com/Data-Science_Portfolio/Change Of Point Model/heating.jpg)](#features)
 Implementation and comparison of different 'offline' unsupervised methods of change-point detection, based in real data.
 </br>The mission : detecting the CPD of the Israeli's summer temperatures distribution.
