@@ -1,4 +1,5 @@
 <img src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/hot%20in%20here2.jpg">
+
 # Change of Point Model
 
 Implementation and comparison of different 'offline' unsupervised methods of change-point detection, based in real data.
