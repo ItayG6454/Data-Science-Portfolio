@@ -2,7 +2,8 @@
 # Data Science Portfolio
 ## Projects in this representory:
 ### 1 : "Is Its getting HOT on here?"  
-In this project We will try to find the change of point in the Israelis summer temperatures distribution.
+It is not really a question whatever it is become hotter in here. The question is : **When and How much**.
+In this project We will try to find the **change of point** in the Israelis summer temperatures distribution.
 We will use  LOO Cros Validation to *comaper three different CPD mehthods* and describve their prons and cons upon real dataset. 
 ### 2 : "Happily Ever After"
 What are the factor that impact our abilty to live longer?
