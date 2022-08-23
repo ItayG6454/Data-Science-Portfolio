@@ -1,6 +1,10 @@
-# <img src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/how-to-handle-your-constant-flow-of-google-analytics-data-501894.png">
 # Data Science Portfolio
+<p align="center"> 
+<img  src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/how-to-handle-your-constant-flow-of-google-analytics-data-501894.png">
+</p>
+
 ## Projects in this representory:
+
 ### 1 : "Is Its getting HOT on here?"  | R Project
 It is not really a question whatever it is become hotter in here. The question is : **When and How much**.
 In this project We will try to find the **change of point** in the Israelis summer temperatures distribution.
@@ -17,7 +21,7 @@ Implementing data preprocessing and exploratory data analysis. Training eight di
 - Classification: Random Forest, KNN
 -Gradient Boosting Regressor
 
-At last :  comparing them by $R^2$ score with K-Fold Cross-Validation and analyzing feature importance. 
+At last :  comparing the models upon test data their $R^2$ score with K-Fold Cross-Validation and analyzing feature importance. 
 <p align="center"> 
 <img width="800" height="200" align="center" src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/procces%20life.jpg">
 </p>
