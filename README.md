@@ -8,7 +8,8 @@
 ### 1 : "Is Its getting HOT on here?"  | R Project
 It is not really a question whatever it is become hotter in here. The question is : **When and How much**.
 In this project We will try to find the **change of point** in the Israelis summer temperatures distribution.
-We will use  LOO Cros Validation to *comaper three different CPD mehthods* and describve their prons and cons upon real dataset.
+We will use  LOO Cros Validation to *comaper three different CPD mehthods*: MCP , NP.ChangePoint , BCP.
+and describve their prons and cons upon real dataset.
 <p align="center"> 
 <img width="800" height="200" align="center" src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/procces%20heat.jpg">
 </p>
