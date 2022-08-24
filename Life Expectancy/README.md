@@ -11,11 +11,21 @@ At first step we preformed **data cleaning** while taking in count outliers and 
 ### Exploratory Data Analysis
 At this stage we tries to understand **initial trends and correlations** for better understanding of the data.
 For example, what is the difference between developed and developing countries:
+
 <p align="center"> 
  <img width="500" height="400" src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/life_dist.png">
 </p>
+
 ### Models and R2 Scores
 After **Skewing and Encoding** as a prepration of the data for modeling.
 We applied 7 different models and measured their preformance upon both the test set and K-fold CV sets.
 After comparison, we analyized the feature preformance in order to detemined *whice factors has most imact on life expectancy* according to the best model. 
-##### The results of models comparison:
+##### The results of models comparison - **Gradient Boost** preformed the best $R^2$ score:
+<p align="center"> 
+ <img width="800" height="400" src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/Models%20comp.png">
+</p>
+
+##### The results of factors comparison:
+<p align="center"> 
+ <img width="900" height="500" src="https://github.com/ItayG6454/Data-Science-Portfolio/blob/main/photos/features%20comp.png">
+</p
